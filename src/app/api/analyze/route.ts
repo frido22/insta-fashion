@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { Groq } from "groq-sdk";
+import { OpenAI } from "openai";
 import { writeFile } from "fs/promises";
 import path from "path";
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 interface InstagramAnalyzer {
@@ -15,25 +15,29 @@ interface InstagramAnalyzer {
 class InstagramAnalyzerImpl implements InstagramAnalyzer {
   async analyzeImage(base64Image: string): Promise<string[]> {
     try {
-      const completion = await groq.chat.completions.create({
-        model: "mixtral-8x7b-32768",
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
         messages: [
           {
-            role: "system",
-            content:
-              "You are a gift recommendation expert analyzing Instagram images to identify interests and hobbies.",
-          },
-          {
             role: "user",
-            content:
-              "What are the main interests and hobbies shown in this Instagram grid? List only single words or short phrases, one per line.",
+            content: [
+              {
+                type: "text",
+                text: "Analyze this Instagram image and provide a list of interests and hobbies.",
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${base64Image}`,
+                },
+              },
+            ],
           },
         ],
-        temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: 500,
       });
 
-      const interests = completion.choices[0]?.message?.content
+      const interests = response.choices[0].message.content
         ?.split("\n")
         .filter(Boolean)
         .map((interest) => interest.trim());
