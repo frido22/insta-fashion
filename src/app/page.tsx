@@ -155,7 +155,11 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [budget, setBudget] = useState<string>("medium");
+  const [budget, setBudget] = useState<string>("budget");
+  const [gender, setGender] = useState<string>("female");
+  const [size, setSize] = useState<string>("m");
+  const [shoeSize, setShoeSize] = useState<string>("us8");
+
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement> | string) => {
     let imageUrl: string;
@@ -207,6 +211,9 @@ export default function Home() {
         body: JSON.stringify({
           image: previewUrl,
           budget,
+          gender,
+          size,
+          shoeSize,
         }),
       });
 
@@ -367,6 +374,55 @@ export default function Home() {
                     <option value="budget">Budget-Friendly</option>
                     <option value="medium">Mid-Range</option>
                     <option value="luxury">Luxury</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Gender</label>
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                  >
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="non-binary">Non-Binary</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Clothing Size</label>
+                  <select
+                    value={size}
+                    onChange={(e) => setSize(e.target.value)}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                  >
+                    <option value="xxs">XXS</option>
+                    <option value="xs">XS</option>
+                    <option value="s">S</option>
+                    <option value="m">M</option>
+                    <option value="l">L</option>
+                    <option value="xl">XL</option>
+                    <option value="xxl">XXL</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Shoe Size (US/EU)</label>
+                  <select
+                    value={shoeSize}
+                    onChange={(e) => setShoeSize(e.target.value)}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                  >
+                    <option value="us5">US 5 / EU 35</option>
+                    <option value="us6">US 6 / EU 36</option>
+                    <option value="us7">US 7 / EU 37</option>
+                    <option value="us8">US 8 / EU 38</option>
+                    <option value="us9">US 9 / EU 39</option>
+                    <option value="us10">US 10 / EU 40</option>
+                    <option value="us11">US 11 / EU 41</option>
+                    <option value="us12">US 12 / EU 42</option>
+                    <option value="us13">US 13 / EU 43</option>
                   </select>
                 </div>
 
