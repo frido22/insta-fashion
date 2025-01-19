@@ -16,7 +16,7 @@ class InstagramAnalyzerImpl implements InstagramAnalyzer {
   async analyzeImage(base64Image: string): Promise<string[]> {
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "user",
@@ -92,7 +92,7 @@ class GiftService {
   async generateRecommendation(interest: string, age: number, budget: number) {
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",

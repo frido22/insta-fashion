@@ -28,7 +28,7 @@ Respond with JSON only:
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [{ role: "user", content: pricePrompt }],
       temperature: 0.7,
     });
@@ -121,7 +121,7 @@ Focus on identifying specific, searchable items and their unique characteristics
 
     // Analyze the image using GPT-4o
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "user",
