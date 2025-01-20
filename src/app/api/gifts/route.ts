@@ -8,7 +8,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export const maxDuration = 30;
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 
 interface GiftRecommendation {
   name: string;
@@ -62,7 +63,7 @@ async function analyzeImage(base64Image: string): Promise<string> {
 Provide a detailed analysis that could help recommend personalized gifts.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "user",
@@ -107,7 +108,7 @@ Format as JSON array: [
 Keep descriptions concise and avoid apostrophes.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "user",

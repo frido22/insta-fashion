@@ -6,7 +6,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export const maxDuration = 30;
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 
 // Function to estimate price using GPT-4
 async function estimatePriceRange(item: string, style: string, budget: string) {
@@ -30,7 +31,7 @@ Respond with JSON only:
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [{ role: "user", content: pricePrompt }],
       temperature: 0.7,
     });
@@ -95,12 +96,13 @@ export async function POST(req: Request) {
     const base64Image = image.split(',')[1];
 
     // Enhanced prompt for style analysis with quality assessment
-    const stylePrompt = `Analyze this Instagram fashion image in detail and provide a structured analysis in the following JSON format:
+    const stylePrompt = `You MUST respond with ONLY a valid JSON object, no additional text or markdown formatting.
+The response MUST follow this EXACT structure:
 {
   "overall_aesthetic": "Brief description of the overall style aesthetic",
   "key_pieces": [
     {
-      "item": "Specific item name",
+      "item": "Specific item name (e.g., 'Black Leather Jacket', 'White Cotton T-shirt')",
       "description": "Detailed description including cut, material, fit",
       "style_elements": "Key style elements that make it stand out",
       "quality_assessment": "Assessment of apparent quality, materials, and craftsmanship"
@@ -119,12 +121,22 @@ export async function POST(req: Request) {
   ]
 }
 
-Focus on identifying specific, searchable items and their unique characteristics, including quality indicators. Consider the budget level: ${budget}`;
+Analyze this Instagram fashion image and provide the analysis following the EXACT format above.
+Important:
+1. DO NOT include any explanatory text outside the JSON
+2. DO NOT use markdown code blocks
+3. Ensure all JSON keys match exactly
+4. The response must be a single valid JSON object
+5. Consider the budget level: ${budget}`;
 
     // Analyze the image using GPT-4o
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
+        {
+          role: "system",
+          content: "You are a fashion analysis assistant. You MUST ONLY respond with a valid JSON object following the exact schema provided. Never include any text outside the JSON structure. Never use markdown code blocks or formatting."
+        },
         {
           role: "user",
           content: [
@@ -142,15 +154,33 @@ Focus on identifying specific, searchable items and their unique characteristics
         }
       ],
       max_tokens: 700,
+      temperature: 0.3, // Lower temperature for more consistent formatting
+      response_format: { type: "json_object" } // Enforce JSON response format
     });
 
-    // Clean up the response content by removing markdown code blocks
+    // Clean up the response content and ensure valid JSON
     let analysisText = response.choices[0].message.content || "{}";
-    analysisText = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     
     try {
+      // Validate JSON structure before parsing
+      if (!analysisText.startsWith('{') || !analysisText.endsWith('}')) {
+        console.error('Invalid JSON format received:', analysisText);
+        throw new Error('Invalid JSON format in response');
+      }
+      
       const analysis = JSON.parse(analysisText);
-
+      
+      // Enhanced validation of required fields
+      if (!analysis.overall_aesthetic || typeof analysis.overall_aesthetic !== 'string') {
+        throw new Error('Missing or invalid overall_aesthetic field');
+      }
+      if (!Array.isArray(analysis.key_pieces) || analysis.key_pieces.length === 0) {
+        throw new Error('Missing or invalid key_pieces array');
+      }
+      if (!analysis.color_palette || !Array.isArray(analysis.color_palette.primary)) {
+        throw new Error('Missing or invalid color_palette structure');
+      }
+      
       // Generate recommendations with style tips
       const recommendations = [
         {

@@ -16,7 +16,7 @@ class InstagramAnalyzerImpl implements InstagramAnalyzer {
   async analyzeImage(base64Image: string): Promise<string[]> {
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           {
             role: "user",
@@ -92,7 +92,7 @@ class GiftService {
   async generateRecommendation(interest: string, age: number, budget: number) {
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -156,7 +156,8 @@ class GiftService {
   }
 }
 
-export const maxDuration = 30;
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {

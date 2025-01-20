@@ -32,6 +32,9 @@ async function scrapeInstagram(username: string, limit: number = 200) {
   }
 }
 
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
