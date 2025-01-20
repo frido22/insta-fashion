@@ -34,7 +34,7 @@ class InstagramAnalyzerImpl implements InstagramAnalyzer {
             ],
           },
         ],
-        max_tokens: 500,
+        max_tokens: 400,
       });
 
       const interests = response.choices[0].message.content
@@ -155,6 +155,8 @@ class GiftService {
     return recommendations;
   }
 }
+
+export const maxDuration = 30;
 
 export async function POST(request: Request) {
   try {

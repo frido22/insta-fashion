@@ -6,6 +6,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+export const maxDuration = 30;
+
 // Function to estimate price using GPT-4
 async function estimatePriceRange(item: string, style: string, budget: string) {
   const pricePrompt = `As a fashion expert, estimate a realistic price range for:
@@ -139,7 +141,7 @@ Focus on identifying specific, searchable items and their unique characteristics
           ]
         }
       ],
-      max_tokens: 1000,
+      max_tokens: 700,
     });
 
     // Clean up the response content by removing markdown code blocks

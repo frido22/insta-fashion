@@ -8,6 +8,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+export const maxDuration = 30;
+
 interface GiftRecommendation {
   name: string;
   description: string;
@@ -68,7 +70,7 @@ Provide a detailed analysis that could help recommend personalized gifts.`;
         },
       ],
       temperature: 0.5,
-      max_tokens: 500,
+      max_tokens: 400,
     });
 
     const analysis = response.choices[0].message.content || "";
@@ -113,7 +115,7 @@ Keep descriptions concise and avoid apostrophes.`;
         },
       ],
       temperature: 0.9,
-      max_tokens: 800,
+      max_tokens: 600,
       top_p: 0.95,
     });
 

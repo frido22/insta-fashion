@@ -5,6 +5,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+export const maxDuration = 30;
+
 export async function POST(request: Request) {
   try {
     const { imageUrl } = await request.json();
@@ -39,7 +41,7 @@ export async function POST(request: Request) {
           ],
         },
       ],
-      max_tokens: 1000,
+      max_tokens: 700,
     });
 
     const analysis = response.choices[0].message.content;
