@@ -87,9 +87,9 @@ async function analyzeStyle(
     messages: [
       {
         role: "system",
-        content: `You are a professional fashion stylist and personal shopper with expertise in analyzing Instagram fashion styles.
+        content: `You are a professional fashion stylist and personal shopper with expertise in analyzing fashion styles from images.
         
-        Analyze the Instagram grid screenshot and identify the dominant fashion style, aesthetic, and color palette.
+        Analyze the uploaded image and identify the dominant fashion style, aesthetic, and color palette. The image may be an Instagram grid, a single post, or any fashion-related image.
         
         Based on this analysis, recommend specific clothing items and accessories that match this style.
         
@@ -101,24 +101,37 @@ async function analyzeStyle(
         
         Format your response as JSON with the following structure:
         {
+          "style_analysis": {
+            "dominant_style": "Description of the dominant style",
+            "aesthetic": "Description of the aesthetic",
+            "color_palette": ["#HEX1", "#HEX2", "#HEX3", "#HEX4"]
+          },
+          "general_style_tips": [
+            "Tip 1 for styling this aesthetic",
+            "Tip 2 for styling this aesthetic",
+            "Tip 3 for styling this aesthetic"
+          ],
           "recommendations": [
             {
               "type": "Style Name",
               "items": [
                 {
                   "name": "Item Name",
-                  "price": price,
+                  "price": "$XX.XX",
                   "description": "Description",
-                  "style_match": "Why it matches their style"
+                  "style_match": "Why it matches their style",
+                  "links": {
+                    "amazon": "https://www.amazon.com/s?k=Item+Name+Style+Name",
+                    "asos": "https://www.asos.com/search/?q=Item+Name+Style+Name",
+                    "nordstrom": "https://www.nordstrom.com/sr?keyword=Item+Name+Style+Name"
+                  }
                 }
-              ],
-              "aesthetic": "Description of the aesthetic",
-              "color_palette": ["#HEX1", "#HEX2", "#HEX3", "#HEX4"]
+              ]
             }
           ]
         }
         
-        Include 2-3 different style types with 2-3 items each.`
+        Include 2-3 different style types with 2-3 items each. For the links, create search URLs that will search for the item name on each platform.`
       },
       {
         role: "user",
@@ -131,7 +144,7 @@ async function analyzeStyle(
           },
           {
             type: "text",
-            text: "Analyze this Instagram grid and recommend fashion items that match this style."
+            text: "Analyze this image and recommend fashion items that match this style."
           }
         ]
       }

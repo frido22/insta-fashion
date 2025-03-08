@@ -53,9 +53,9 @@ async function processAnalysisInBackground(
       messages: [
         {
           role: "system",
-          content: `You are a professional fashion stylist and personal shopper with expertise in analyzing Instagram fashion styles.
+          content: `You are a professional fashion stylist and personal shopper with expertise in analyzing fashion styles from images.
           
-          Analyze the Instagram grid screenshot and identify the dominant fashion style, aesthetic, and color palette.
+          Analyze the uploaded image and identify the dominant fashion style, aesthetic, and color palette. The image may be an Instagram grid, a single post, or any fashion-related image.
           
           Based on this analysis, recommend specific clothing items and accessories that match this style.
           
@@ -110,7 +110,7 @@ async function processAnalysisInBackground(
             },
             {
               type: "text",
-              text: "Analyze this Instagram grid and recommend fashion items that match this style."
+              text: "Analyze this image and recommend fashion items that match this style."
             }
           ]
         }

@@ -186,6 +186,14 @@ export default function Home() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
 
+  // Get the base URL for API calls
+  const getBaseUrl = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.origin;
+    }
+    return '';
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement> | string) => {
     let imageUrl: string;
     
@@ -225,7 +233,8 @@ export default function Home() {
     if (jobId && isLoading) {
       intervalId = setInterval(async () => {
         try {
-          const response = await fetch(`/api/analyze/status?jobId=${jobId}`);
+          const baseUrl = getBaseUrl();
+          const response = await fetch(`${baseUrl}/api/analyze/status?jobId=${jobId}`);
           if (!response.ok) {
             throw new Error("Failed to check job status");
           }
@@ -277,7 +286,8 @@ export default function Home() {
 
     try {
       // Start the analysis job
-      const response = await fetch("/api/analyze/start", {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/api/analyze/start`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -352,6 +362,7 @@ export default function Home() {
                   src={style.image}
                   alt={style.name}
                   fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
@@ -424,6 +435,7 @@ export default function Home() {
                       src={previewUrl}
                       alt="Preview"
                       fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
                       className="object-cover"
                     />
                   </div>
