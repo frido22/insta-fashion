@@ -10,6 +10,10 @@ const openai = new OpenAI({
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
+// Increase the max body size to 10MB (default is 4MB)
+export const bodyParser = {
+  sizeLimit: '10mb'
+};
 
 export async function POST(req: Request) {
   try {

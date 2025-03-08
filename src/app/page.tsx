@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
+import NextImage from "next/image";
 import {
   Instagram,
   Palette,
@@ -194,6 +194,88 @@ export default function Home() {
     return '';
   };
 
+  // Function to compress image to a smaller size
+  const compressImage = async (dataUrl: string, maxSizeMB = 4): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      try {
+        // Use the global Image constructor from the browser
+        const img = new window.Image();
+        img.onload = () => {
+          // Create canvas
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Calculate new dimensions while maintaining aspect ratio
+          const maxDimension = 1600; // Increased from 1200 for better quality
+          if (width > height && width > maxDimension) {
+            height = Math.round((height / width) * maxDimension);
+            width = maxDimension;
+          } else if (height > maxDimension) {
+            width = Math.round((width / height) * maxDimension);
+            height = maxDimension;
+          }
+          
+          // Set canvas dimensions
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Draw image on canvas with better quality
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Could not get canvas context'));
+            return;
+          }
+          
+          // Set better quality options
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Get compressed data URL
+          // Start with higher quality
+          let quality = 0.95;
+          let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+          
+          // Check size and reduce quality if needed
+          const getSizeInMB = (dataUrl: string) => {
+            const base64 = dataUrl.split(',')[1];
+            return (base64.length * 3) / 4 / 1024 / 1024;
+          };
+          
+          // Reduce quality more gradually
+          while (getSizeInMB(compressedDataUrl) > maxSizeMB && quality > 0.5) {
+            quality -= 0.05; // More gradual reduction
+            compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+          }
+          
+          // If still too large, reduce dimensions
+          if (getSizeInMB(compressedDataUrl) > maxSizeMB) {
+            // Reduce dimensions and try again
+            width = Math.round(width * 0.8);
+            height = Math.round(height * 0.8);
+            canvas.width = width;
+            canvas.height = height;
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, width, height);
+            compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+          }
+          
+          resolve(compressedDataUrl);
+        };
+        
+        img.onerror = (error) => {
+          reject(error);
+        };
+        
+        img.src = dataUrl;
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement> | string) => {
     let imageUrl: string;
     
@@ -300,6 +382,20 @@ export default function Home() {
     setProgress(0);
 
     try {
+      // Compress the image before sending
+      let processedImage = previewUrl;
+      
+      // Only compress if it's a data URL (from file upload)
+      if (previewUrl.startsWith('data:')) {
+        try {
+          processedImage = await compressImage(previewUrl, 4); // Compress to max 4MB
+          console.log('Image compressed successfully');
+        } catch (error) {
+          console.error('Error compressing image:', error);
+          // Continue with original image if compression fails
+        }
+      }
+      
       // Start the analysis job
       const baseUrl = getBaseUrl();
       const response = await fetch(`${baseUrl}/api/analyze/start`, {
@@ -308,7 +404,7 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          image: previewUrl,
+          image: processedImage,
           budget,
           gender,
           size,
@@ -324,6 +420,7 @@ export default function Home() {
       setJobId(data.jobId);
       setProgress(5); // Initial progress
     } catch (err) {
+      console.error("Error analyzing style:", err);
       setError("Failed to start analysis. Please try again.");
       setIsLoading(false);
     }
@@ -373,7 +470,7 @@ export default function Home() {
                 key={index}
                 className="group relative aspect-[4/5] rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                <Image
+                <NextImage
                   src={style.image}
                   alt={style.name}
                   fill
@@ -446,7 +543,7 @@ export default function Home() {
                 
                 {previewUrl && (
                   <div className="relative aspect-square rounded-xl overflow-hidden shadow-md">
-                    <Image
+                    <NextImage
                       src={previewUrl}
                       alt="Preview"
                       fill
