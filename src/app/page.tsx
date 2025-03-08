@@ -229,42 +229,57 @@ export default function Home() {
   // Poll for job status
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
+    let failedAttempts = 0;
+    const maxFailedAttempts = 5;
     
     if (jobId && isLoading) {
       intervalId = setInterval(async () => {
         try {
           const baseUrl = getBaseUrl();
           const response = await fetch(`${baseUrl}/api/analyze/status?jobId=${jobId}`);
+          
           if (!response.ok) {
-            throw new Error("Failed to check job status");
+            failedAttempts++;
+            console.error(`Failed to check job status: ${response.status} ${response.statusText}`);
+            
+            if (failedAttempts >= maxFailedAttempts) {
+              clearInterval(intervalId);
+              setIsLoading(false);
+              setError("Failed to check job status after multiple attempts. Please try again.");
+            }
+            return;
           }
+          
+          // Reset failed attempts counter on successful response
+          failedAttempts = 0;
           
           const data = await response.json();
           
-          // Update progress based on status
-          if (data.status === 'pending') {
-            setProgress(10);
-          } else if (data.status === 'processing') {
-            setProgress(50);
-          } else if (data.status === 'completed') {
-            setProgress(100);
+          if (data.status === 'completed' && data.result) {
             setAnalysisResult(data.result);
             setIsLoading(false);
             setJobId(null);
-            clearInterval(intervalId);
+            setProgress(100);
           } else if (data.status === 'failed') {
-            setError(data.error || "Analysis failed. Please try again.");
             setIsLoading(false);
+            setError(data.error || "Analysis failed");
             setJobId(null);
-            clearInterval(intervalId);
+          } else if (data.status === 'processing') {
+            // Update progress - simulate progress from 10% to 90% during processing
+            const newProgress = Math.min(90, progress + 5);
+            setProgress(newProgress);
           }
-        } catch (err) {
-          setError("Failed to check job status. Please try again.");
-          setIsLoading(false);
-          setJobId(null);
-          clearInterval(intervalId);
+        } catch (error) {
+          failedAttempts++;
+          console.error("Error checking job status:", error);
+          
+          if (failedAttempts >= maxFailedAttempts) {
+            clearInterval(intervalId);
+            setIsLoading(false);
+            setError("Failed to check job status. Please try again.");
+          }
         }
-      }, 2000); // Poll every 2 seconds
+      }, 2000);
     }
     
     return () => {
@@ -272,7 +287,7 @@ export default function Home() {
         clearInterval(intervalId);
       }
     };
-  }, [jobId, isLoading]);
+  }, [jobId, isLoading, progress]);
 
   const analyzeStyle = async () => {
     if (!previewUrl) {
@@ -351,7 +366,7 @@ export default function Home() {
       {/* Sample Styles Section */}
       <div className="w-full bg-white py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-semibold text-center mb-12">Explore Style Categories</h2>
+          <h2 className="text-3xl font-semibold mb-12">Explore Style Categories</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {sampleStyles.map((style, index) => (
               <div 

@@ -1,5 +1,5 @@
-// A simple in-memory store for analysis jobs
-// In a production environment, this would be replaced with a database
+// A persistent store for analysis jobs
+// This approach works better with serverless environments like Vercel
 
 export interface AnalysisJob {
   id: string;
@@ -9,8 +9,35 @@ export interface AnalysisJob {
   error?: string;
 }
 
-// Global variable to store jobs (will be reset on server restart)
-const jobs = new Map<string, AnalysisJob>();
+// In-memory cache for server-side operations
+const jobCache = new Map<string, AnalysisJob>();
+
+// Initialize from localStorage if in browser
+if (typeof window !== 'undefined') {
+  try {
+    const storedJobs = localStorage.getItem('analysisJobs');
+    if (storedJobs) {
+      const parsedJobs = JSON.parse(storedJobs);
+      for (const job of parsedJobs) {
+        jobCache.set(job.id, job);
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load jobs from localStorage:', e);
+  }
+}
+
+// Helper to save jobs to localStorage
+const saveJobsToStorage = () => {
+  if (typeof window !== 'undefined') {
+    try {
+      const jobs = Array.from(jobCache.values());
+      localStorage.setItem('analysisJobs', JSON.stringify(jobs));
+    } catch (e) {
+      console.error('Failed to save jobs to localStorage:', e);
+    }
+  }
+};
 
 export const analysisStore = {
   // Create a new job
@@ -20,33 +47,42 @@ export const analysisStore = {
       status: 'pending',
       startTime: Date.now(),
     };
-    jobs.set(id, job);
+    
+    // Store in memory cache
+    jobCache.set(id, job);
+    saveJobsToStorage();
+    
     return job;
   },
 
   // Get a job by ID
   getJob: (id: string): AnalysisJob | undefined => {
-    return jobs.get(id);
+    return jobCache.get(id);
   },
 
   // Update a job
   updateJob: (id: string, updates: Partial<AnalysisJob>): AnalysisJob | undefined => {
-    const job = jobs.get(id);
+    const job = jobCache.get(id);
     if (!job) return undefined;
 
     const updatedJob = { ...job, ...updates };
-    jobs.set(id, updatedJob);
+    
+    // Update in memory cache
+    jobCache.set(id, updatedJob);
+    saveJobsToStorage();
+    
     return updatedJob;
   },
 
   // Clean up old jobs (older than 1 hour)
   cleanupOldJobs: (): void => {
     const oneHourAgo = Date.now() - 60 * 60 * 1000;
-    for (const [id, job] of jobs.entries()) {
+    for (const [id, job] of jobCache.entries()) {
       if (job.startTime < oneHourAgo) {
-        jobs.delete(id);
+        jobCache.delete(id);
       }
     }
+    saveJobsToStorage();
   }
 };
 
