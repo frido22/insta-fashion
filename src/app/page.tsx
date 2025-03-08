@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   Instagram,
@@ -18,38 +18,66 @@ import {
   Grid,
 } from "lucide-react";
 
+interface StyleAnalysis {
+  dominant_style: string;
+  aesthetic: string;
+  color_palette: string[];
+}
+
 interface Recommendation {
   type: string;
   items: {
     name: string;
     description: string;
     style_match: string;
-    image_url?: string;
-    shop_links?: {
+    price: string;
+    links: {
       amazon: string;
-      nordstrom: string;
       asos: string;
+      nordstrom: string;
     };
-    price?: number;
   }[];
-  aesthetic: string;
-  color_palette: string[];
-  stores?: string[];
+}
+
+interface AnalysisResult {
+  style_analysis: StyleAnalysis;
+  general_style_tips: string[];
+  recommendations: Recommendation[];
 }
 
 interface RecommendationItem {
   name: string;
   description: string;
   style_match: string;
-  shop_links?: {
+  price: string;
+  links: {
     amazon: string;
-    nordstrom: string;
     asos: string;
+    nordstrom: string;
   };
-  price?: number;
 }
 
 const RecommendationCard = ({ item }: { item: RecommendationItem }) => {
+  // Function to ensure links are properly encoded
+  const getEncodedLink = (link: string, itemName: string) => {
+    // If the link already contains the item name, use it as is
+    if (link.includes(itemName.replace(/ /g, '+'))) {
+      return link;
+    }
+    
+    // Otherwise, create a search link with the item name
+    if (link.includes('amazon.com')) {
+      return `https://www.amazon.com/s?k=${encodeURIComponent(itemName)}`;
+    } else if (link.includes('asos.com')) {
+      return `https://www.asos.com/search/?q=${encodeURIComponent(itemName)}`;
+    } else if (link.includes('nordstrom.com')) {
+      return `https://www.nordstrom.com/sr?keyword=${encodeURIComponent(itemName)}`;
+    }
+    
+    // Default: return the original link
+    return link;
+  };
+
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6 mb-6 border border-purple-100 hover:border-purple-200 transition-all">
       <div className="mb-4">
@@ -58,53 +86,49 @@ const RecommendationCard = ({ item }: { item: RecommendationItem }) => {
         <p className="text-purple-600 font-medium">{item.style_match}</p>
       </div>
       
-      {item.price && (
-        <p className="text-purple-600 font-semibold mb-4">${item.price}</p>
-      )}
+      <p className="text-purple-600 font-semibold mb-4">${item.price}</p>
 
-      {item.shop_links && (
-        <div className="flex flex-col gap-2">
-          {item.shop_links.amazon && (
-            <a
-              href={item.shop_links.amazon}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all shadow-sm hover:shadow group"
-            >
-              <span className="font-medium">Shop on Amazon</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </a>
-          )}
-          {item.shop_links.nordstrom && (
-            <a
-              href={item.shop_links.nordstrom}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-4 py-2.5 bg-white text-purple-600 border-2 border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all shadow-sm hover:shadow group"
-            >
-              <span className="font-medium">Shop on Nordstrom</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </a>
-          )}
-          {item.shop_links.asos && (
-            <a
-              href={item.shop_links.asos}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-4 py-2.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-all shadow-sm hover:shadow group"
-            >
-              <span className="font-medium">Shop on ASOS</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </a>
-          )}
-        </div>
-      )}
+      <div className="flex flex-col gap-2">
+        {item.links.amazon && (
+          <a
+            href={getEncodedLink(item.links.amazon, item.name)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all shadow-sm hover:shadow group"
+          >
+            <span className="font-medium">Shop on Amazon</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </a>
+        )}
+        {item.links.nordstrom && (
+          <a
+            href={getEncodedLink(item.links.nordstrom, item.name)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center px-4 py-2.5 bg-white text-purple-600 border-2 border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all shadow-sm hover:shadow group"
+          >
+            <span className="font-medium">Shop on Nordstrom</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </a>
+        )}
+        {item.links.asos && (
+          <a
+            href={getEncodedLink(item.links.asos, item.name)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center px-4 py-2.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-all shadow-sm hover:shadow group"
+          >
+            <span className="font-medium">Shop on ASOS</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </a>
+        )}
+      </div>
     </div>
   );
 };
@@ -153,13 +177,14 @@ const features = [
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [budget, setBudget] = useState<string>("budget");
   const [gender, setGender] = useState<string>("female");
   const [size, setSize] = useState<string>("m");
   const [shoeSize, setShoeSize] = useState<string>("us8");
-
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [progress, setProgress] = useState<number>(0);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement> | string) => {
     let imageUrl: string;
@@ -193,6 +218,53 @@ export default function Home() {
     }
   };
 
+  // Poll for job status
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    
+    if (jobId && isLoading) {
+      intervalId = setInterval(async () => {
+        try {
+          const response = await fetch(`/api/analyze/status?jobId=${jobId}`);
+          if (!response.ok) {
+            throw new Error("Failed to check job status");
+          }
+          
+          const data = await response.json();
+          
+          // Update progress based on status
+          if (data.status === 'pending') {
+            setProgress(10);
+          } else if (data.status === 'processing') {
+            setProgress(50);
+          } else if (data.status === 'completed') {
+            setProgress(100);
+            setAnalysisResult(data.result);
+            setIsLoading(false);
+            setJobId(null);
+            clearInterval(intervalId);
+          } else if (data.status === 'failed') {
+            setError(data.error || "Analysis failed. Please try again.");
+            setIsLoading(false);
+            setJobId(null);
+            clearInterval(intervalId);
+          }
+        } catch (err) {
+          setError("Failed to check job status. Please try again.");
+          setIsLoading(false);
+          setJobId(null);
+          clearInterval(intervalId);
+        }
+      }, 2000); // Poll every 2 seconds
+    }
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [jobId, isLoading]);
+
   const analyzeStyle = async () => {
     if (!previewUrl) {
       setError("Please upload an Instagram grid screenshot first");
@@ -201,9 +273,11 @@ export default function Home() {
 
     setIsLoading(true);
     setError(null);
+    setProgress(0);
 
     try {
-      const response = await fetch("/api/analyze-style", {
+      // Start the analysis job
+      const response = await fetch("/api/analyze/start", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -218,14 +292,14 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to analyze style");
+        throw new Error("Failed to start analysis");
       }
 
       const data = await response.json();
-      setRecommendations(data.recommendations);
+      setJobId(data.jobId);
+      setProgress(5); // Initial progress
     } catch (err) {
-      setError("Failed to analyze style. Please try again.");
-    } finally {
+      setError("Failed to start analysis. Please try again.");
       setIsLoading(false);
     }
   };
@@ -459,33 +533,72 @@ export default function Home() {
       </div>
 
       {/* Recommendations Section */}
-      {recommendations.length > 0 && (
+      {analysisResult && (
         <div className="w-full bg-white py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <section className="bg-white rounded-2xl shadow-lg p-8">
               <h2 className="text-3xl font-semibold mb-8 flex items-center gap-3 text-gray-800">
                 <Sparkles className="w-8 h-8 text-purple-600" />
-                Your Style Recommendations
+                Your Style Analysis
               </h2>
               
+              {/* Style Analysis */}
+              <div className="mb-12 p-6 bg-purple-50 rounded-xl border border-purple-100">
+                <h3 className="text-xl font-semibold mb-4 text-gray-800">Style Profile</h3>
+                <p className="text-gray-700 mb-4 text-lg">
+                  <span className="font-medium">Dominant Style:</span> {analysisResult.style_analysis.dominant_style}
+                </p>
+                <p className="text-gray-700 mb-6">
+                  <span className="font-medium">Aesthetic:</span> {analysisResult.style_analysis.aesthetic}
+                </p>
+                
+                <div className="mb-6">
+                  <h4 className="text-md font-medium mb-3 text-gray-700 flex items-center gap-2">
+                    <Palette className="w-5 h-5 text-purple-600" />
+                    Color Palette
+                  </h4>
+                  <div className="flex flex-wrap gap-3">
+                    {analysisResult.style_analysis.color_palette.map((color, i) => (
+                      <div
+                        key={i}
+                        className="w-10 h-10 rounded-full shadow-sm flex items-center justify-center"
+                        style={{ backgroundColor: color }}
+                      >
+                        <span className="sr-only">{color}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Style Tips */}
+              <div className="mb-12">
+                <h3 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                  Style Tips
+                </h3>
+                <ul className="space-y-3">
+                  {analysisResult.general_style_tips.map((tip, i) => (
+                    <li key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="bg-purple-100 text-purple-700 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {i + 1}
+                      </div>
+                      <p className="text-gray-700">{tip}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              
+              {/* Recommendations */}
+              <h3 className="text-xl font-semibold mb-6 text-gray-800 flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-purple-600" />
+                Recommended Items
+              </h3>
+              
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {recommendations.map((rec, index) => (
+                {analysisResult.recommendations.map((rec, index) => (
                   <div key={index} className="border border-gray-100 rounded-xl p-6 bg-gray-50">
                     <h3 className="text-xl font-semibold mb-4 text-gray-800">{rec.type}</h3>
-                    <p className="text-gray-600 mb-4">
-                      {rec.aesthetic}
-                    </p>
-                    
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {rec.color_palette.map((color, i) => (
-                        <div
-                          key={i}
-                          className="w-8 h-8 rounded-full shadow-sm"
-                          style={{ backgroundColor: color }}
-                          title={color}
-                        />
-                      ))}
-                    </div>
                     
                     <div className="space-y-6">
                       {rec.items.map((item, i) => (
@@ -496,6 +609,26 @@ export default function Home() {
                 ))}
               </div>
             </section>
+          </div>
+        </div>
+      )}
+      
+      {/* Progress bar for async processing */}
+      {isLoading && jobId && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center">
+              <div className="w-full bg-gray-200 rounded-full h-2.5 mr-4">
+                <div 
+                  className="bg-purple-600 h-2.5 rounded-full transition-all duration-500" 
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+              <span className="text-sm text-gray-700">{progress}%</span>
+            </div>
+            <p className="text-sm text-gray-600 mt-2">
+              Analyzing your style preferences... This may take a minute.
+            </p>
           </div>
         </div>
       )}
